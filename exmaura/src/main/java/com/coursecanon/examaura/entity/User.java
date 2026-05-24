@@ -12,10 +12,14 @@ import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 @Entity
@@ -29,7 +33,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class User implements UserDetails {
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
@@ -106,5 +110,58 @@ public class User {
     public void addAttempt(QuizAttempt attempt) {
         attempts.add(attempt);
         attempt.setUser(this);
+    }
+
+    // ========================================================================
+    // SPRING SECURITY: USER DETAILS IMPLEMENTATION
+    // ========================================================================
+
+    /**
+     * Translates your custom Role enum into Spring Security's GrantedAuthority.
+     * Spring Security expects roles to typically be prefixed with "ROLE_".
+     */
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
+    }
+
+    /**
+     * We use email as the unique identifier for logging in.
+     */
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    /**
+     * The password field is automatically mapped, but we still need to override this.
+     */
+    @Override
+    public String getPassword() {
+        return passwordHash;
+    }
+
+    // --- Account Status Flags ---
+    // For now, we return 'true' for all of these so users can log in immediately.
+    // In the future, you could tie these to database boolean columns (e.g., isBanned, isEmailVerified).
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }
