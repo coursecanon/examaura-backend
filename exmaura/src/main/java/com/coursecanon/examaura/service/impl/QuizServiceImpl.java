@@ -4,11 +4,16 @@ import com.coursecanon.examaura.dto.request.QuizCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.PaginatedResponse;
 import com.coursecanon.examaura.entity.Category;
+import com.coursecanon.examaura.entity.Question;
 import com.coursecanon.examaura.entity.Quiz;
+import com.coursecanon.examaura.entity.User;
 import com.coursecanon.examaura.entity.enums.QuizDifficulty;
 import com.coursecanon.examaura.exception.ResourceNotFoundException;
+import com.coursecanon.examaura.mapper.QuestionMapper;
 import com.coursecanon.examaura.mapper.QuizMapper;
+import com.coursecanon.examaura.repository.CategoryRepository;
 import com.coursecanon.examaura.repository.QuizRepository;
+import com.coursecanon.examaura.repository.UserRepository;
 import com.coursecanon.examaura.service.QuizService;
 import com.coursecanon.examaura.service.helper.QuizSpecifications;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +34,9 @@ import java.util.UUID;
 public class QuizServiceImpl implements QuizService {
     private final QuizRepository quizRepository;
     private final QuizMapper quizMapper;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final QuestionMapper questionMapper;
 
     public PaginatedResponse<QuizResponseDto> findAllQuizzes(UUID categoryId, String difficulty, String search, Pageable pageable){
         Specification<Quiz> spec= QuizSpecifications.filterQuizzes(categoryId, difficulty, search);
@@ -65,11 +73,47 @@ public class QuizServiceImpl implements QuizService {
         return response;
     }
 
+//    @Override
+//    @Transactional
+//    public QuizResponseDto createQuiz(QuizCreateRequestDTO request, UUID creatorId){
+//        Quiz quiz=quizMapper.toEntity(request, creatorId);
+//        Quiz savedQuiz=quizRepository.save(quiz);
+//        return quizMapper.toResponse(savedQuiz);
+//    }
+
     @Override
     @Transactional
-    public QuizResponseDto createQuiz(QuizCreateRequestDTO request, UUID creatorId){
-        Quiz quiz=quizMapper.toEntity(request, creatorId);
-        Quiz savedQuiz=quizRepository.save(quiz);
+    public QuizResponseDto createQuiz(QuizCreateRequestDTO request, UUID creatorId) {
+        // 1. Map basic fields
+        Quiz quiz = quizMapper.toEntity(request, creatorId);
+
+        // 2. FIX FOR NULL CATEGORY/CREATOR:
+        // Fetch the full entities from DB instead of just passing references
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found with Id: "+ request.getCategoryId()));
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: "+ creatorId));
+
+        quiz.setCategory(category);
+        quiz.setCreator(creator);
+
+        // 3. FIX FOR MISSING QUESTIONS:
+        // Convert DTOs to Entities and link them to the Quiz
+        if (request.getQuestions() != null && !request.getQuestions().isEmpty()) {
+            request.getQuestions().forEach(questionDto -> {
+                Question question = questionMapper.toEntity(questionDto);
+                // Use the helper method so Hibernate knows they belong to this Quiz!
+                quiz.addQuestion(question);
+            });
+
+            // Update the total questions count
+            quiz.setTotalQuestions(request.getQuestions().size());
+        } else {
+            quiz.setTotalQuestions(0);
+        }
+
+        // 4. Save and return (Hibernate will cascade the save to the questions automatically)
+        Quiz savedQuiz = quizRepository.save(quiz);
         return quizMapper.toResponse(savedQuiz);
     }
 

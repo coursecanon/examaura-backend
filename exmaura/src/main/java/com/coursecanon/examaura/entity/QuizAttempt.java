@@ -9,6 +9,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,14 +62,14 @@ public class QuizAttempt {
     private Integer passingScore;
 
     @Column(name = "started_at", nullable = false)
-    private ZonedDateTime startedAt;
+    private Instant startedAt;
 
     @Column(name = "completed_at", nullable = false)
-    private ZonedDateTime completedAt;
+    private Instant completedAt;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

@@ -30,6 +30,7 @@ CREATE TYPE question_type_enum AS ENUM (
     'MATCHING_DROPDOWN'
 );
 CREATE TYPE quiz_difficulty_enum AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
+CREATE TYPE user_role_enum AS ENUM ('OWNER', 'ADMIN', 'EDITOR', 'VIEWER');
 
 -- ============================================
 -- USERS TABLE
@@ -37,9 +38,11 @@ CREATE TYPE quiz_difficulty_enum AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED'
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email VARCHAR(255) NOT NULL UNIQUE,
-    name VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+	fullname VARCHAR(255) NOT NULL,
     avatar_url VARCHAR(512),
     oauth_provider oauth_provider_enum NOT NULL DEFAULT 'LOCAL',
+	user_role user_role_enum NOT NULL DEFAULT 'VIEWER',
     oauth_id VARCHAR(255),
     password_hash VARCHAR(255), -- Only for LOCAL auth
     is_active BOOLEAN DEFAULT TRUE,
@@ -69,6 +72,7 @@ CREATE TABLE categories (
     is_custom BOOLEAN DEFAULT FALSE,
     created_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_slug_format CHECK (slug ~* '^[a-z0-9-]+$')
 );
@@ -207,6 +211,7 @@ CREATE TABLE question_answers (
     question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
     user_answer JSONB NOT NULL, -- Stores user's answer in format matching question type
     is_correct BOOLEAN NOT NULL,
+	is_answer_revealed BOOLEAN NOT NULL DEFAULT FALSE,
     points_earned DECIMAL(5,2) DEFAULT 0.00,
     time_spent_seconds INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -334,7 +339,7 @@ CREATE TRIGGER trigger_update_quiz_statistics
 
 -- Sample User
 INSERT INTO users (email, name, avatar_url, oauth_provider, oauth_id) VALUES
-('coursecanon@example.com', 'coursecanon', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop', 'GOOGLE', 'google-123456');
+('coursecanon@example.com', 'coursecanon', 'Course Canon', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=64&h=64&fit=crop', 'GOOGLE', 'google-123456');
 
 -- Sample Quiz
 INSERT INTO quizzes (title, slug, description, category_id, creator_id, duration_minutes, total_questions)

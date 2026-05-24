@@ -47,6 +47,10 @@ public class QuestionAnswer {
     @Column(name = "is_correct", nullable = false)
     private Boolean isCorrect;
 
+    @Column(name = "is_answer_revealed")
+    @Builder.Default
+    private Boolean isAnswerRevealed = false;
+
     @Column(name = "points_earned", precision = 5, scale = 2)
     @Builder.Default
     private BigDecimal pointsEarned = BigDecimal.ZERO;
