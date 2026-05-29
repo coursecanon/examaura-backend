@@ -63,10 +63,10 @@ public class User implements UserDetails {
     @Column(name = "oauth_provider", nullable = false, columnDefinition = "oauth_provider_enum")
     private OAuthProvider oauthProvider;
 
-    @Column(name = "oauth_id", length = 255)
+    @Column(name = "oauth_id", length = 255, nullable = true)
     private String oauthId;
 
-    @Column(name = "password_hash", length = 255)
+    @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
 
     @Column(name = "is_active")

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("api/v1")
+@RequestMapping()
 @RequiredArgsConstructor //automatically injects the service and mapper via constructor
 public class QuestionController {
 

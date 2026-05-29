@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/attempts")
+@RequestMapping("/attempts")
 @RequiredArgsConstructor
 @Slf4j
 public class QuizAttemptController {

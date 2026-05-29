@@ -92,12 +92,12 @@
 			<artifactId>hypersistence-utils-hibernate-63</artifactId>
 			<version>3.7.0</version>
 		</dependency>
-<!-- For enviornment vars loading -->
-        <dependency>
-            <groupId>me.paulschwarz</groupId>
-            <artifactId>spring-dotenv</artifactId>
-            <version>4.0.0</version>
-        </dependency>
+		<!-- To load the .env automatically -->
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>spring-dotenv</artifactId>
+			<version>4.0.0</version>
+		</dependency>
         <!-- modern JSON Web Token (JJWT) libraries. -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -116,6 +116,11 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
+		<!-- OAuth  -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
+		</dependency>
 
 	</dependencies>
 
