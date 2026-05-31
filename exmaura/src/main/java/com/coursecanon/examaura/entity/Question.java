@@ -64,7 +64,7 @@ public class Question extends BaseEntity {
     private JsonNode options;
 
     @Type(JsonType.class)
-    @Column(name = "correct_answer", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "correct_answer", columnDefinition = "jsonb")
     private JsonNode correctAnswer;
 
     @Type(JsonType.class)

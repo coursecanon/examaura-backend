@@ -28,6 +28,8 @@ public class RegisterRequestDto {
     @NotNull(message = "Role is required")
     private UserRole userRole;
 
+    private String avatarUrl;
+
 
 //    private OAuthProvider oauthProvider;
 //    private String oauthId;

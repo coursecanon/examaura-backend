@@ -21,6 +21,7 @@ public class UserMapper {
         response.setFullName(user.getFullName());
         response.setEnabled(user.getIsActive());
         response.setEmail(user.getEmail());
+        response.setAvatarUrl(user.getAvatarUrl());
 
         //safely map roles
         // Note: change "role.name() to role.getName() or similar if role is custome entity instead of enum
@@ -46,6 +47,6 @@ public class UserMapper {
         //security note:
         //We deliberately DO NOT update the fields like username, password, roles or isEnabled here
         //Changing thoses fileds should be handled by dedicated, highly-secured endpoints
-        //(e.g Authcontroller for passowrds, AdminController for roles)
+        //(e.g Authcontroller for passwords, AdminController for roles)
     }
 }

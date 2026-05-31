@@ -73,14 +73,6 @@ public class QuizServiceImpl implements QuizService {
         return response;
     }
 
-//    @Override
-//    @Transactional
-//    public QuizResponseDto createQuiz(QuizCreateRequestDTO request, UUID creatorId){
-//        Quiz quiz=quizMapper.toEntity(request, creatorId);
-//        Quiz savedQuiz=quizRepository.save(quiz);
-//        return quizMapper.toResponse(savedQuiz);
-//    }
-
     @Override
     @Transactional
     public QuizResponseDto createQuiz(QuizCreateRequestDTO request, UUID creatorId) {

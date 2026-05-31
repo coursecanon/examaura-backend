@@ -19,5 +19,5 @@ public class AuthenticationResponseDTO {
 
 
     private OAuthProvider oauthProvider;
-    private String oauthId;
+//    private String oauthId;
 }

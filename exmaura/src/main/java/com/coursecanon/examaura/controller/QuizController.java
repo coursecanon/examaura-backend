@@ -57,7 +57,7 @@ public class QuizController {
     @PostMapping
     public ResponseEntity<QuizResponseDto> createQuiz(
             @Valid @RequestBody QuizCreateRequestDTO request) {
-        UUID currentUserId = UUID.fromString("dceb2a0a-0918-4c0e-93a5-b9c70875f34f");
+        UUID currentUserId = UUID.fromString("6bd66326-570b-46f8-a2bc-afef9c7151fe");
         QuizResponseDto quiz = quizService.createQuiz(request, currentUserId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(quiz);

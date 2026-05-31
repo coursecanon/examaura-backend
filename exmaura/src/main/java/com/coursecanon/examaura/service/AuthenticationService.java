@@ -45,17 +45,23 @@ public class AuthenticationService {
                 .passwordHash(passwordEncoder.encode(request.getPassword())) // Securely hash the password
                 .userRole(request.getUserRole())
                 .oauthProvider(OAuthProvider.LOCAL)
+                .avatarUrl(request.getAvatarUrl())
                 .oauthId(null)
                 .build();
 
         User savedUser = userRepository.save(user);
-        String jwtToken = jwtService.generateToken(savedUser);
+        String jwtToken = jwtService.generateToken(
+                buildClaims(savedUser),
+                savedUser
+        );
 
         return AuthenticationResponseDTO.builder()
                 .token(jwtToken)
                 .userId(savedUser.getId())
+                .fullName(savedUser.getFullName())
                 .username(savedUser.getUsername())
                 .email(savedUser.getEmail())
+                .avatar_url(savedUser.getAvatarUrl())
                 .role(savedUser.getUserRole().name())
                 .oauthProvider(savedUser.getOauthProvider())
                 .build();
@@ -81,17 +87,10 @@ public class AuthenticationService {
                 )
         );
 
-        // 1. Create the extra claims map to mirror the Google OAuth layout
-        Map<String, Object> extraClaims = new HashMap<>();
-
-        // NOTE: If your User entity has a dedicated getFullName() or getFirstName(), use that here.
-        // Otherwise, user.getUsername() works perfectly as the fallback.
-        extraClaims.put("name", user.getFullName());
-
-        // Since local users don't have a Google hosting profile picture, pass a default fallback URL
-        extraClaims.put("avatarUrl", user.getAvatarUrl());
-
-        String jwtToken = jwtService.generateToken(extraClaims, user);
+        String jwtToken = jwtService.generateToken(
+                buildClaims(user),
+                user
+        );
 
         return AuthenticationResponseDTO.builder()
                 .token(jwtToken)
@@ -102,5 +101,14 @@ public class AuthenticationService {
                 .fullName(user.getFullName())
                 .role(user.getUserRole().name())
                 .build();
+    }
+
+    private Map<String, Object> buildClaims(User user) {
+        Map<String, Object> claims = new HashMap<>();
+
+        claims.put("userId", user.getId());
+        claims.put("role", user.getUserRole().name());
+
+        return claims;
     }
 }

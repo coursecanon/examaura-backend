@@ -12,6 +12,7 @@ public class UserResponseDto {
     private String email;
     private String fullName;
     private String userRole;
+    private String avatarUrl;
     private boolean enabled;
 
 }
