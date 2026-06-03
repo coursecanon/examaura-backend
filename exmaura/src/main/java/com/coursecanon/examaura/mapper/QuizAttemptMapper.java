@@ -22,10 +22,8 @@ public class QuizAttemptMapper {
         dto.setTotalQuestions(attempt.getTotalQuestions());
         dto.setCorrectAnswers(attempt.getCorrectAnswers());
         dto.setTimeTakenSeconds(attempt.getTimeTakenSeconds());
-
-        // Use the computed boolean from your entity
         dto.setIsPassed(attempt.isPassed());
-
+        dto.setPassedScore(attempt.getPassedScore());
         dto.setStartedAt(attempt.getStartedAt());
         dto.setCompletedAt(attempt.getCompletedAt());
 

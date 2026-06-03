@@ -1,19 +1,10 @@
 package com.coursecanon.examaura.service;
 
-
-//Handling polymorphic JSON grading is one of the trickiest parts of building a certification simulator. The primary challenge is that standard JSON equality checks are too strict: if a user selects ["B", "A"] for a multiple-choice question, but the database stores ["A", "B"], a basic string comparison will mark it wrong, even though it is logically correct.
-//
-//To fix this, we need a dedicated evaluation component that understands the rules of each specific QuestionType.
-//
-//This component isolates the Jackson JsonNode traversal logic so your main service remains clean.
-
-import com.coursecanon.examaura.entity.enums.QuestionType;
+import com.coursecanon.examaura.entity.Question;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -21,78 +12,138 @@ public class AnswerEvaluator {
 
     /**
      * Routes the evaluation based on the question type.
+     * Note: We now pass the entire Question object because answers for
+     * complex types are hidden inside statements, categories, etc.
      */
-    public boolean evaluate(QuestionType type, JsonNode correctAnswer, JsonNode userAnswer) {
-        if (correctAnswer == null || userAnswer == null) {
+    public boolean evaluate(Question question, JsonNode userAnswer) {
+        // If the user skipped the question or the payload is empty
+        if (userAnswer == null || userAnswer.isNull() || userAnswer.isMissingNode()) {
             return false;
         }
 
-        return switch (type) {
-            case OBJECTIVE -> evaluateObjective(correctAnswer, userAnswer);
-            case MULTIPLE_CHOICE -> evaluateArrayUnordered(correctAnswer, userAnswer);
-            case DRAG_CLASSIFY -> evaluateDragClassify(correctAnswer, userAnswer);
-            case YES_NO_GRID, MATCHING_DROPDOWN -> evaluateExactMatch(correctAnswer, userAnswer);
-            default -> false; // Failsafe for unmapped types
-        };
+        try {
+            return switch (question.getQuestionType()) {
+                case OBJECTIVE -> evaluateObjective(question, userAnswer);
+                case MULTIPLE_CHOICE -> evaluateMultipleChoice(question, userAnswer);
+                case YES_NO_GRID -> evaluateYesNoGrid(question, userAnswer);
+                case DRAG_MATCH -> evaluateDragMatch(question, userAnswer);
+                case DRAG_CLASSIFY -> evaluateDragClassify(question, userAnswer);
+                case MATCHING_DROPDOWN -> evaluateMatchingDropdown(question, userAnswer);
+                case INLINE_DROPDOWN -> evaluateInlineDropdown(question, userAnswer);
+                default -> false; // Failsafe
+            };
+        } catch (Exception e) {
+            // If Jackson fails to parse or cast an unexpected frontend payload, mark it incorrect
+            return false;
+        }
     }
 
-    /**
-     * For single-choice questions. Checks exact text value.
-     * Example: "Option B" == "Option B"
-     */
-    private boolean evaluateObjective(JsonNode correct, JsonNode user) {
-        return correct.asText().trim().equalsIgnoreCase(user.asText().trim());
+    private boolean evaluateObjective(Question question, JsonNode userAnswer) {
+        // DB: {"answer": 1} OR 1. Frontend: 1
+        JsonNode correctNode = question.getCorrectAnswer();
+        if (correctNode == null) return false;
+
+        int expected = correctNode.has("answer") ? correctNode.get("answer").asInt() : correctNode.asInt();
+        return expected == userAnswer.asInt();
     }
 
-    /**
-     * For multiple-choice questions.
-     * Compares two JSON Arrays but ignores the order of the elements inside them.
-     * Example: ["A", "B"] equals ["B", "A"]
-     */
-    private boolean evaluateArrayUnordered(JsonNode correct, JsonNode user) {
-        if (!correct.isArray() || !user.isArray()) return false;
-        if (correct.size() != user.size()) return false;
+    private boolean evaluateMultipleChoice(Question question, JsonNode userAnswer) {
+        // DB: {"answers": [0, 1]}. Frontend: [0, 1]
+        JsonNode correctNode = question.getCorrectAnswer();
+        if (correctNode == null) return false;
 
-        Set<String> correctSet = new HashSet<>();
-        correct.forEach(node -> correctSet.add(node.asText().trim()));
+        JsonNode correctArray = correctNode.has("answers") ? correctNode.get("answers") : correctNode;
+        if (!userAnswer.isArray() || correctArray.size() != userAnswer.size()) return false;
 
-        Set<String> userSet = new HashSet<>();
-        user.forEach(node -> userSet.add(node.asText().trim()));
+        Set<Integer> expectedSet = new HashSet<>();
+        correctArray.forEach(node -> expectedSet.add(node.asInt()));
 
-        return correctSet.equals(userSet);
+        Set<Integer> actualSet = new HashSet<>();
+        userAnswer.forEach(node -> actualSet.add(node.asInt()));
+
+        return expectedSet.equals(actualSet);
     }
 
-    /**
-     * For drag-and-drop classification.
-     * Expects a JSON Object where keys are categories and values are arrays of items.
-     * Example: {"Compute": ["VM", "Functions"], "Storage": ["Blob"]}
-     */
-    private boolean evaluateDragClassify(JsonNode correct, JsonNode user) {
-        if (!correct.isObject() || !user.isObject()) return false;
-        if (correct.size() != user.size()) return false;
+    private boolean evaluateYesNoGrid(Question question, JsonNode userAnswer) {
+        // DB: statements -> [{"id": "stmt1", "correctAnswer": "yes"}]
+        // Frontend: {"stmt1": "yes"}
+        if (question.getStatements() == null || !userAnswer.isObject()) return false;
 
-        Iterator<Map.Entry<String, JsonNode>> fields = correct.fields();
-        while (fields.hasNext()) {
-            Map.Entry<String, JsonNode> field = fields.next();
-            String category = field.getKey();
-            JsonNode correctItems = field.getValue();
-            JsonNode userItems = user.get(category);
-
-            // If the user missed a category entirely, or the items inside don't match (unordered)
-            if (userItems == null || !evaluateArrayUnordered(correctItems, userItems)) {
+        for (JsonNode stmt : question.getStatements()) {
+            String id = stmt.get("id").asText();
+            String expectedAns = stmt.get("correctAnswer").asText();
+            if (!userAnswer.has(id) || !userAnswer.get(id).asText().equals(expectedAns)) {
                 return false;
             }
         }
         return true;
     }
 
-    /**
-     * For grid and matching questions.
-     * Expects a flat JSON object mapping rows to selections.
-     * Jackson's equals() handles objects perfectly, ignoring key order natively.
-     * Example: {"Row1": "Yes", "Row2": "No"}
-     */
-    private boolean evaluateExactMatch(JsonNode correct, JsonNode user) {
-        return correct.equals(user);
+    private boolean evaluateDragMatch(Question question, JsonNode userAnswer) {
+        // DB: matchPairs -> [{"id": "pair1", "term": "..."}]
+        // Frontend: {"pair1": "pair1"}
+        if (question.getMatchPairs() == null || !userAnswer.isObject()) return false;
+
+        for (JsonNode pair : question.getMatchPairs()) {
+            String id = pair.get("id").asText();
+            if (!userAnswer.has(id) || !userAnswer.get(id).asText().equals(id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean evaluateDragClassify(Question question, JsonNode userAnswer) {
+        // DB: classifyItems -> [{"id": "item1", "correctCategoryId": "cat1"}]
+        // Frontend: {"cat1": ["item1"]}
+        if (question.getClassifyItems() == null || !userAnswer.isObject()) return false;
+
+        for (JsonNode item : question.getClassifyItems()) {
+            String itemId = item.get("id").asText();
+            String correctCat = item.get("correctCategoryId").asText();
+
+            boolean found = false;
+            if (userAnswer.has(correctCat) && userAnswer.get(correctCat).isArray()) {
+                for (JsonNode userItem : userAnswer.get(correctCat)) {
+                    if (userItem.asText().equals(itemId)) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            if (!found) return false;
+        }
+        return true;
+    }
+
+    private boolean evaluateMatchingDropdown(Question question, JsonNode userAnswer) {
+        // DB: dropdownRows -> [{"id": "row1", "correctAnswer": 2}]
+        // Frontend: {"row1": 2}
+        if (question.getDropdownRows() == null || !userAnswer.isObject()) return false;
+
+        for (JsonNode row : question.getDropdownRows()) {
+            String id = row.get("id").asText();
+            int expected = row.get("correctAnswer").asInt();
+            if (!userAnswer.has(id) || userAnswer.get(id).asInt() != expected) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean evaluateInlineDropdown(Question question, JsonNode userAnswer) {
+        // DB: inlineDropdowns -> [{"correctAnswer": 0}, {"correctAnswer": 1}]
+        // Frontend: {"0": 0, "1": 1}
+        if (question.getInlineDropdowns() == null || !userAnswer.isObject()) return false;
+
+        for (int i = 0; i < question.getInlineDropdowns().size(); i++) {
+            JsonNode dropdown = question.getInlineDropdowns().get(i);
+            int expected = dropdown.get("correctAnswer").asInt();
+            String indexStr = String.valueOf(i);
+            if (!userAnswer.has(indexStr) || userAnswer.get(indexStr).asInt() != expected) {
+                return false;
+            }
+        }
+        return true;
     }
 }

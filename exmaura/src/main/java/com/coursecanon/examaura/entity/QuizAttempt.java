@@ -1,7 +1,6 @@
 package com.coursecanon.examaura.entity;
 
 import com.coursecanon.examaura.entity.enums.*;
-import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
@@ -10,7 +9,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -61,6 +59,10 @@ public class QuizAttempt {
     @Column(name = "passing_score", nullable = false)
     private Integer passingScore;
 
+    @Builder.Default
+    @Column(name = "passed_score", nullable = false)
+    private BigDecimal passedScore = BigDecimal.ZERO;
+
     @Column(name = "started_at", nullable = false)
     private Instant startedAt;
 
@@ -78,7 +80,7 @@ public class QuizAttempt {
     // Computed field
     @Transient
     public Boolean isPassed() {
-        return score.compareTo(BigDecimal.valueOf(passingScore)) >= 0;
+        return passedScore.compareTo(BigDecimal.valueOf(passingScore)) >= 0;
     }
 
     // Helper methods

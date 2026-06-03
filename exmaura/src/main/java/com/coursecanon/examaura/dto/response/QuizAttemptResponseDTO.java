@@ -13,6 +13,7 @@ public class QuizAttemptResponseDTO {
     private UUID userId;
     private String mode;
     private BigDecimal score;
+    private BigDecimal passedScore;
     private Integer totalQuestions;
     private Integer correctAnswers;
     private Integer timeTakenSeconds;

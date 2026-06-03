@@ -79,8 +79,7 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         // 1. Evaluate the incoming answer
         JsonNode userSubmittedJson = objectMapper.convertValue(request.getUserAnswer(), JsonNode.class);
         boolean isCorrect = answerEvaluator.evaluate(
-                question.getQuestionType(),
-                question.getCorrectAnswer(),
+                question,
                 userSubmittedJson
         );
 
@@ -142,17 +141,34 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         for (QuestionAnswer answer : attempt.getQuestionAnswers()) {
             if (Boolean.TRUE.equals(answer.getIsCorrect())) {
                 totalCorrect++;
-                totalScore = totalScore.add(answer.getPointsEarned());
+                // Ensure your QuestionAnswer has points mapped correctly
+                totalScore = totalScore.add(answer.getPointsEarned() != null ? answer.getPointsEarned() : BigDecimal.ZERO);
             }
             if (answer.getTimeSpentSeconds() != null) {
                 totalTime += answer.getTimeSpentSeconds();
             }
         }
 
-        // 2. Update Attempt Record
+        // 2. Fetch the required passing percentage from the associated Quiz
+        // If your model uses an integer (e.g., 70 for 70%), convert to BigDecimal
+        int passingPercentage = attempt.getPassingScore();
+        int totalPossibleQuestions = attempt.getQuestionAnswers().size();
+
+        // Calculate Score Percentage: (Total Correct / Total Questions) * 100
+        double scorePercentage = totalPossibleQuestions > 0
+                ? ((double) totalCorrect / totalPossibleQuestions) * 100
+                : 0.0;
+
+        // 3. Update Attempt Record
         attempt.setCorrectAnswers(totalCorrect);
         attempt.setTimeTakenSeconds(totalTime);
-        attempt.setScore(totalScore);
+        attempt.setScore(totalScore); // Storing the percentage
+        attempt.setPassedScore(BigDecimal.valueOf(scorePercentage)); // Storing the target threshold
+
+        // Determine pass/fail status
+//        boolean isPassed = scorePercentage >= passingPercentage;
+//        attempt.setPassed(isPassed);
+
         attempt.setCompletedAt(Instant.now());
 
         QuizAttempt finishedAttempt = attemptRepository.save(attempt);

@@ -2,10 +2,7 @@ package com.coursecanon.examaura.mapper;
 
 import com.coursecanon.examaura.dto.request.QuestionCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuestionResponseDTO;
-import com.coursecanon.examaura.dto.supportingdto.CategoryDTO;
-import com.coursecanon.examaura.dto.supportingdto.ClassifyItemDTO;
-import com.coursecanon.examaura.dto.supportingdto.DropdownRowDTO;
-import com.coursecanon.examaura.dto.supportingdto.MatchPairDTO;
+import com.coursecanon.examaura.dto.supportingdto.*;
 import com.coursecanon.examaura.entity.Question;
 import com.coursecanon.examaura.entity.enums.QuestionType;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -45,39 +42,48 @@ public class QuestionMapper {
         //Map to polymorphic payload fields
         try {
             if (request.getQuestionType() != null){
-                switch (request.getQuestionType().toUpperCase()){
+                switch (request.getQuestionType().toUpperCase()) {
                     case "OBJECTIVE":
                     case "MULTIPLE_CHOICE":
-                        if (request.getOptions() != null){
-                            //coverts the List<String> to Jackson jsonnode or object for hibernate JSONB
+                        if (request.getOptions() != null) {
                             question.setOptions(objectMapper.convertValue(request.getOptions(), JsonNode.class));
                         }
-                        if (request.getCorrectAnswer() != null){
+                        if (request.getCorrectAnswer() != null) {
                             question.setCorrectAnswer(objectMapper.convertValue(request.getCorrectAnswer(), JsonNode.class));
                         }
                         break;
                     case "YES_NO_GRID":
-                        if (request.getMatchPairs() != null){
-                            //Note: Mapping request.getMatchPairs() back to entity's 'statements' property
-                            // to mirror toResponse logic
+                        if (request.getMatchPairs() != null) {
+                            // Note: Mapping request's matchPairs to entity's statements
                             question.setStatements(objectMapper.convertValue(request.getMatchPairs(), JsonNode.class));
                         }
                         break;
                     case "DRAG_CLASSIFY":
-                        if (request.getCategories() != null){
+                        if (request.getCategories() != null) {
                             question.setCategories(objectMapper.convertValue(request.getCategories(), JsonNode.class));
                         }
-                        if (request.getClassifyItems() != null){
-                            question.setCategories(objectMapper.convertValue(request.getClassifyItems(), JsonNode.class));
+                        if (request.getClassifyItems() != null) {
+                            question.setClassifyItems(objectMapper.convertValue(request.getClassifyItems(), JsonNode.class)); // 👈 Fixed copy-paste bug
                         }
                         break;
                     case "MATCHING_DROPDOWN":
-                        if (request.getDropdownRows() != null){
-                            question.setCategories(objectMapper.convertValue(request.getDropdownRows(), JsonNode.class));
+                        if (request.getDropdownRows() != null) {
+                            question.setDropdownRows(objectMapper.convertValue(request.getDropdownRows(), JsonNode.class)); // 👈 Fixed copy-paste bug
                         }
                         break;
-
-
+                    case "DRAG_MATCH": // 👈 Added New Type
+                        if (request.getMatchPairs() != null) {
+                            question.setMatchPairs(objectMapper.convertValue(request.getMatchPairs(), JsonNode.class));
+                        }
+                        break;
+                    case "INLINE_DROPDOWN": // 👈 Added New Type
+                        if (request.getSentenceTemplate() != null) {
+                            question.setSentenceTemplate(request.getSentenceTemplate());
+                        }
+                        if (request.getInlineDropdowns() != null) {
+                            question.setInlineDropdowns(objectMapper.convertValue(request.getInlineDropdowns(), JsonNode.class));
+                        }
+                        break;
                 }
             }
         } catch (IllegalArgumentException e){
@@ -99,33 +105,44 @@ public class QuestionMapper {
         response.setPosition(question.getPosition());
 
         try {
-            switch (question.getQuestionType()){
+            switch (question.getQuestionType()) {
                 case OBJECTIVE:
                 case MULTIPLE_CHOICE:
-                    if (question.getOptions() != null){
+                    if (question.getOptions() != null) {
                         response.setOptions(objectMapper.convertValue(question.getOptions(), new TypeReference<List<String>>() {}));
                     }
-                    if (question.getCorrectAnswer()!= null){
+                    if (question.getCorrectAnswer() != null) {
                         response.setCorrectAnswer(question.getCorrectAnswer());
                     }
                     break;
                 case YES_NO_GRID:
-                    if (question.getMatchPairs() != null){
+                    if (question.getStatements() != null) {
                         response.setMatchPairs(objectMapper.convertValue(question.getStatements(), new TypeReference<List<MatchPairDTO>>() {}));
                     }
                     break;
                 case DRAG_CLASSIFY:
-                    if (question.getCategories() != null){
+                    if (question.getCategories() != null) {
                         response.setCategories(objectMapper.convertValue(question.getCategories(), new TypeReference<List<CategoryDTO>>() {}));
                     }
-                    if (question.getClassifyItems() != null){
+                    if (question.getClassifyItems() != null) {
                         response.setClassifyItems(objectMapper.convertValue(question.getClassifyItems(), new TypeReference<List<ClassifyItemDTO>>() {}));
                     }
                     break;
-
                 case MATCHING_DROPDOWN:
-                    if (question.getDropdownRows() != null){
+                    if (question.getDropdownRows() != null) {
                         response.setDropdownRows(objectMapper.convertValue(question.getDropdownRows(), new TypeReference<List<DropdownRowDTO>>() {}));
+                    }
+                    break;
+                case DRAG_MATCH: // 👈 Added New Type
+                    if (question.getMatchPairs() != null) {
+                        response.setMatchPairs(objectMapper.convertValue(question.getMatchPairs(), new TypeReference<List<MatchPairDTO>>() {}));
+                    }
+                    break;
+                case INLINE_DROPDOWN: // 👈 Added New Type
+                    response.setSentenceTemplate(question.getSentenceTemplate());
+                    if (question.getInlineDropdowns() != null) {
+                        // Assumes you have or will create an InlineDropdownDTO
+                        response.setInlineDropdowns(objectMapper.convertValue(question.getInlineDropdowns(), new TypeReference<List<InlineDropdownDTO>>() {}));
                     }
                     break;
             }
@@ -144,6 +161,8 @@ public class QuestionMapper {
         existingQuestion.setPosition(request.getPosition());
 
         if (request.getQuestionType() != null) {
+            // Note: If you want to allow changing the question type of an existing question,
+            // uncomment the line below. Otherwise, it's safer to leave type immutable on updates.
             // existingQuestion.setQuestionType(QuestionType.valueOf(request.getQuestionType().toUpperCase()));
         }
 
@@ -170,6 +189,16 @@ public class QuestionMapper {
                     case "MATCHING_DROPDOWN":
                         existingQuestion.setDropdownRows(request.getDropdownRows() != null ?
                                 objectMapper.convertValue(request.getDropdownRows(), JsonNode.class) : null);
+                        break;
+                    case "DRAG_MATCH": // 👈 Added New Type
+                        existingQuestion.setMatchPairs(request.getMatchPairs() != null ?
+                                objectMapper.convertValue(request.getMatchPairs(), JsonNode.class) : null);
+                        break;
+                    case "INLINE_DROPDOWN": // 👈 Added New Type
+                        existingQuestion.setSentenceTemplate(request.getSentenceTemplate() != null ?
+                                request.getSentenceTemplate() : null);
+                        existingQuestion.setInlineDropdowns(request.getInlineDropdowns() != null ?
+                                objectMapper.convertValue(request.getInlineDropdowns(), JsonNode.class) : null);
                         break;
                 }
             }

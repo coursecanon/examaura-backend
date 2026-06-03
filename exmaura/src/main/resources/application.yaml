@@ -4,7 +4,7 @@ spring:
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:dev-db-examaura}?sslmode=require
-    username: ${POSTGRES_USER:postgress}
+    username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:manage}
     driver-class-name: org.postgresql.Driver
 
