@@ -165,9 +165,6 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         attempt.setScore(totalScore); // Storing the percentage
         attempt.setPassedScore(BigDecimal.valueOf(scorePercentage)); // Storing the target threshold
 
-        // Determine pass/fail status
-//        boolean isPassed = scorePercentage >= passingPercentage;
-//        attempt.setPassed(isPassed);
 
         attempt.setCompletedAt(Instant.now());
 

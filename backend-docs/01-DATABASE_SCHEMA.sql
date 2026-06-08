@@ -139,7 +139,7 @@ CREATE TABLE questions (
     -- JSON columns for polymorphic question data
     -- Structure varies by question_type
     options JSONB, -- For OBJECTIVE and MULTIPLE_CHOICE
-    correct_answer JSONB NOT NULL, -- Stores correct answer(s) in various formats
+    correct_answer JSONB, -- Stores correct answer(s) in various formats
 
     -- For YES_NO_GRID
     statements JSONB, -- Array of {id, text, correctAnswer}
@@ -181,11 +181,12 @@ CREATE TABLE quiz_attempts (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     quiz_id UUID NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
     mode VARCHAR(20) NOT NULL CHECK (mode IN ('REAL', 'PRACTICE')),
-    score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
+    passed_score DECIMAL(5,2) NOT NULL CHECK (score >= 0 AND score <= 100),
     total_questions INTEGER NOT NULL,
     correct_answers INTEGER NOT NULL,
     time_taken_seconds INTEGER NOT NULL,
     passing_score INTEGER NOT NULL, -- Snapshot of quiz's passing score at attempt time
+	score DECIMAL(5,2) DEFAULT 1,
     is_passed BOOLEAN GENERATED ALWAYS AS (score >= passing_score) STORED,
     started_at TIMESTAMP WITH TIME ZONE NOT NULL,
     completed_at TIMESTAMP WITH TIME ZONE NOT NULL,

@@ -55,7 +55,7 @@ public class QuestionMapper {
                     case "YES_NO_GRID":
                         if (request.getMatchPairs() != null) {
                             // Note: Mapping request's matchPairs to entity's statements
-                            question.setStatements(objectMapper.convertValue(request.getMatchPairs(), JsonNode.class));
+                            question.setStatements(objectMapper.convertValue(request.getStatements(), JsonNode.class));
                         }
                         break;
                     case "DRAG_CLASSIFY":
@@ -117,7 +117,7 @@ public class QuestionMapper {
                     break;
                 case YES_NO_GRID:
                     if (question.getStatements() != null) {
-                        response.setMatchPairs(objectMapper.convertValue(question.getStatements(), new TypeReference<List<MatchPairDTO>>() {}));
+                        response.setStatements(objectMapper.convertValue(question.getStatements(), new TypeReference<List<StatementDTO>>() {}));
                     }
                     break;
                 case DRAG_CLASSIFY:
@@ -177,8 +177,8 @@ public class QuestionMapper {
                                 objectMapper.convertValue(request.getCorrectAnswer(), JsonNode.class) : null);
                         break;
                     case "YES_NO_GRID":
-                        existingQuestion.setStatements(request.getMatchPairs() != null ?
-                                objectMapper.convertValue(request.getMatchPairs(), JsonNode.class) : null);
+                        existingQuestion.setStatements(request.getStatements() != null ?
+                                objectMapper.convertValue(request.getStatements(), JsonNode.class) : null);
                         break;
                     case "DRAG_CLASSIFY":
                         existingQuestion.setCategories(request.getCategories() != null ?

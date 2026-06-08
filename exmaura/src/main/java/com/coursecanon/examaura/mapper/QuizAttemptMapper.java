@@ -1,8 +1,12 @@
 package com.coursecanon.examaura.mapper;
 
+import com.coursecanon.examaura.dto.response.QuestionAnswerResponseDTO;
 import com.coursecanon.examaura.dto.response.QuizAttemptResponseDTO;
 import com.coursecanon.examaura.entity.QuizAttempt;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class QuizAttemptMapper {
@@ -26,6 +30,24 @@ public class QuizAttemptMapper {
         dto.setPassedScore(attempt.getPassedScore());
         dto.setStartedAt(attempt.getStartedAt());
         dto.setCompletedAt(attempt.getCompletedAt());
+
+        // 🚀 Map the entity answers to the DTO answers
+        if (attempt.getQuestionAnswers() != null) {
+            List<QuestionAnswerResponseDTO> answerDTOs = attempt.getQuestionAnswers().stream()
+                    .map(answer -> {
+                        QuestionAnswerResponseDTO ansDto = new QuestionAnswerResponseDTO();
+                        if (answer.getQuestion() != null) {
+                            ansDto.setQuestionId(answer.getQuestion().getId());
+                        }
+                        ansDto.setUserAnswer(answer.getUserAnswer());
+                        ansDto.setIsCorrect(answer.getIsCorrect());
+                        ansDto.setTimeSpentSeconds(answer.getTimeSpentSeconds());
+                        return ansDto;
+                    })
+                    .collect(Collectors.toList());
+
+            dto.setQuestionAnswers(answerDTOs);
+        }
 
         return dto;
     }
