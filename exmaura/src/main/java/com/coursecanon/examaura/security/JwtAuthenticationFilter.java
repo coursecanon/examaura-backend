@@ -1,5 +1,6 @@
 package com.coursecanon.examaura.security;
 
+import com.coursecanon.examaura.entity.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,6 +48,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 4. Extract the user email from the token
         userEmail = jwtService.extractUsername(jwt);
 
+
+
         // 5. If we have an email, and the user isn't already authenticated in this session
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
@@ -55,6 +58,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             // 6. Validate the token against the database user
             if (jwtService.isTokenValid(jwt, userDetails)) {
+
+                // 🚀 6.5 VERSION VALIDATION
+                // Cast to your User entity to access the tokenVersion field
+                if (userDetails instanceof com.coursecanon.examaura.entity.User) {
+                    Integer dbVersion = ((User) userDetails).getTokenVersion();
+                    Integer jwtVersion = jwtService.extractTokenVersion(jwt); // You need to implement this in JwtService
+
+                    if (!dbVersion.equals(jwtVersion)) {
+                        // Password was changed, token is now obsolete
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired due to password change.");
+                        return;
+                    }
+                }
 
                 // 7. Create an authentication object
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(

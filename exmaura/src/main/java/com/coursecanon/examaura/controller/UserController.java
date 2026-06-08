@@ -1,5 +1,6 @@
 package com.coursecanon.examaura.controller;
 
+import com.coursecanon.examaura.dto.request.PasswordUpdateDTO;
 import com.coursecanon.examaura.dto.request.UserUpdateRequestDto;
 import com.coursecanon.examaura.dto.response.UserResponseDto;
 import com.coursecanon.examaura.service.UserService;
@@ -8,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,6 +36,25 @@ public class UserController {
             @PathVariable UUID id,
             @Valid @RequestBody UserUpdateRequestDto request){
         return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
+    @PutMapping("/profile/password")
+    public ResponseEntity<?> updatePassword(
+            @Valid @RequestBody PasswordUpdateDTO request,
+            Principal principal) {
+
+        // The 'principal.getName()' usually returns the email or username
+        // that your JWT filter parsed out of the token.
+        // This makes it impossible for User A to update User B's password!
+        String authenticatedUserEmail = principal.getName();
+
+        try {
+            userService.updatePassword(authenticatedUserEmail, request);
+            return ResponseEntity.ok().body("Password updated successfully");
+        } catch (IllegalArgumentException e) {
+            // Return a 400 Bad Request if the old password was wrong
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

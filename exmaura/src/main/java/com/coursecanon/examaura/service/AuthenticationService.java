@@ -108,6 +108,7 @@ public class AuthenticationService {
 
         claims.put("userId", user.getId());
         claims.put("role", user.getUserRole().name());
+        claims.put("tokenVersion", user.getTokenVersion());
 
         return claims;
     }

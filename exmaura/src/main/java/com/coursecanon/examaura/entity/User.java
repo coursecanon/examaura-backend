@@ -69,6 +69,9 @@ public class User implements UserDetails {
     @Column(name = "password_hash", length = 255, nullable = false)
     private String passwordHash;
 
+    @Column(nullable = false)
+    private Integer tokenVersion=1;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
@@ -110,6 +113,10 @@ public class User implements UserDetails {
     public void addAttempt(QuizAttempt attempt) {
         attempts.add(attempt);
         attempt.setUser(this);
+    }
+
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 
     // ========================================================================
