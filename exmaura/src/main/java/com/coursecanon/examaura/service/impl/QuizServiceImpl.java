@@ -2,6 +2,7 @@ package com.coursecanon.examaura.service.impl;
 
 import com.coursecanon.examaura.dto.request.QuizCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizResponseDto;
+import com.coursecanon.examaura.dto.response.UserQuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.PaginatedResponse;
 import com.coursecanon.examaura.entity.Category;
 import com.coursecanon.examaura.entity.Question;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -142,5 +144,15 @@ public class QuizServiceImpl implements QuizService {
 
         }
         quizRepository.deleteById(id);
+    }
+
+    @Override
+    public List<UserQuizResponseDto> getLatestQuizzesByCreator(UUID creatorId) {
+        // Utilizes the new optimized repository method we added
+        List<Quiz> latestQuizzes = quizRepository.findTop10ByCreatorIdOrderByCreatedAtDesc(creatorId);
+
+        return latestQuizzes.stream()
+                .map(quizMapper::minimalQuiz)
+                .collect(Collectors.toList());
     }
 }

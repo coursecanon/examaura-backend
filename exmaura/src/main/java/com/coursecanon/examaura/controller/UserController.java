@@ -20,6 +20,7 @@ public class UserController {
 
     private final UserService userService;
 
+    //get user by userid
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUserProfile(
             @PathVariable(name = "id") UUID id){
@@ -31,6 +32,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
+    //update profile nbu userid
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUserProfile(
             @PathVariable UUID id,
@@ -38,6 +40,7 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
+    //update user password
     @PutMapping("/profile/password")
     public ResponseEntity<?> updatePassword(
             @Valid @RequestBody PasswordUpdateDTO request,
@@ -57,6 +60,7 @@ public class UserController {
         }
     }
 
+    //Delete user by user id
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteUserAccount(@PathVariable UUID id){
         userService.deleteUser(id);

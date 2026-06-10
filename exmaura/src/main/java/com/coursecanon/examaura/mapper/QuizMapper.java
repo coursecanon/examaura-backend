@@ -2,6 +2,8 @@ package com.coursecanon.examaura.mapper;
 
 import com.coursecanon.examaura.dto.request.QuizCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizResponseDto;
+import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
+import com.coursecanon.examaura.dto.response.UserQuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.CategorySummary;
 import com.coursecanon.examaura.dto.supportingdto.UserSummary;
 import com.coursecanon.examaura.entity.Category;
@@ -101,5 +103,27 @@ public class QuizMapper {
 
         //enforce entity rules required slug structures before saving
         return quiz;
+    }
+
+    public UserQuizResponseDto minimalQuiz(Quiz quiz) {
+        if (quiz == null) {
+            return null;
+        }
+
+        UserQuizResponseDto response = new UserQuizResponseDto();
+        response.setId(quiz.getId());
+        response.setTitle(quiz.getTitle());
+
+        if (quiz.getDifficulty() != null) {
+            response.setDifficulty(quiz.getDifficulty().name());
+        }
+        response.setPassingPercentage(quiz.getPassingPercentage());
+        response.setTotalQuestions(quiz.getTotalQuestions());
+
+        if (quiz.getCategory() != null){
+            response.setCategory(quiz.getCategory().getName());
+        }
+
+        return response;
     }
 }

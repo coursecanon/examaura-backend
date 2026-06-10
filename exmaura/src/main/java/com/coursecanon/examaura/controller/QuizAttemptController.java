@@ -8,6 +8,7 @@ package com.coursecanon.examaura.controller;
 import com.coursecanon.examaura.dto.request.QuestionAnswerSubmitDTO;
 import com.coursecanon.examaura.dto.request.QuizAttemptStartRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizAttemptResponseDTO;
+import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
 import com.coursecanon.examaura.service.QuizAttemptService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -76,5 +78,12 @@ public class QuizAttemptController {
     public ResponseEntity<QuizAttemptResponseDTO> getAttemptSummary(@PathVariable UUID attemptId) {
 
         return ResponseEntity.ok(attemptService.getAttemptSummary(attemptId));
+    }
+
+    // get 5 most recent attempts by userid
+    @GetMapping("/{userId}/recent")
+    public ResponseEntity<List<UserAttemptResponseDto>> getRecentUserAttempts(@PathVariable UUID userId) {
+        List<UserAttemptResponseDto> attempts = attemptService.getRecentAttemptsByUser(userId);
+        return ResponseEntity.ok(attempts);
     }
 }

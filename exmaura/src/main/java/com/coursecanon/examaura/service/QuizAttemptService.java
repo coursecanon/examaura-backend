@@ -2,8 +2,11 @@ package com.coursecanon.examaura.service;
 
 import com.coursecanon.examaura.dto.request.QuestionAnswerSubmitDTO;
 import com.coursecanon.examaura.dto.request.QuizAttemptStartRequestDTO;
+import com.coursecanon.examaura.dto.response.AttemptResponseDTO;
 import com.coursecanon.examaura.dto.response.QuizAttemptResponseDTO;
+import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface QuizAttemptService {
@@ -15,4 +18,6 @@ public interface QuizAttemptService {
 
     QuizAttemptResponseDTO finishAttempt(UUID attemptId);
     QuizAttemptResponseDTO getAttemptSummary(UUID attemptId);
+    // 🚀 NEW: Fetch top 5 recent quiz attempts by specific user
+    List<UserAttemptResponseDto> getRecentAttemptsByUser(UUID userId);
 }

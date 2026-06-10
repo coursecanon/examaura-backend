@@ -2,14 +2,9 @@ package com.coursecanon.examaura.service;
 
 import com.coursecanon.examaura.dto.request.QuizCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizResponseDto;
+import com.coursecanon.examaura.dto.response.UserQuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.PaginatedResponse;
-import com.coursecanon.examaura.entity.Quiz;
-import com.coursecanon.examaura.mapper.QuizMapper;
-import com.coursecanon.examaura.repository.QuizRepository;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
@@ -22,5 +17,6 @@ public interface QuizService {
     QuizResponseDto getQuizDetails(UUID id, boolean includeQuestions);
     QuizResponseDto createQuiz(QuizCreateRequestDTO requestDTO, UUID creatorId);
     QuizResponseDto updateQuiz(UUID id, QuizCreateRequestDTO request);
+    List<UserQuizResponseDto> getLatestQuizzesByCreator(UUID creatorId);
     void deleteQuiz(UUID id);
 }

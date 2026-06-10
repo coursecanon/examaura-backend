@@ -2,7 +2,10 @@ package com.coursecanon.examaura.controller;
 
 import com.coursecanon.examaura.dto.request.QuizCreateRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizResponseDto;
+import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
+import com.coursecanon.examaura.dto.response.UserQuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.PaginatedResponse;
+import com.coursecanon.examaura.entity.Quiz;
 import com.coursecanon.examaura.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,6 +58,7 @@ public class QuizController {
         return ResponseEntity.ok(quizResponse);
     }
 
+    //Create quiz
     @PostMapping
     public ResponseEntity<QuizResponseDto> createQuiz(
             @Valid @RequestBody QuizCreateRequestDTO request) {
@@ -86,5 +91,12 @@ public class QuizController {
     public ResponseEntity<Map<String, String>> deleteQuiz(@PathVariable UUID id){
         quizService.deleteQuiz(id);
         return ResponseEntity.ok(Map.of("message", "Quiz deleted successfully"));
+    }
+
+    //Get quizzes(10) by user id
+    @GetMapping("/{userId}/latest")
+    public ResponseEntity<List<UserQuizResponseDto>> getLatestUserQuizzes(@PathVariable UUID userId) {
+        List<UserQuizResponseDto> quizzes = quizService.getLatestQuizzesByCreator(userId);
+        return ResponseEntity.ok(quizzes);
     }
 }

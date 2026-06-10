@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> {
     List<QuizAttempt> findAllByUserIdOrderByStartedAtDesc(UUID userId);
     List<QuizAttempt> findAllByQuizId(UUID quizId);
+    List<QuizAttempt> findTop5ByUserIdOrderByCompletedAtDesc(UUID userId);
 }

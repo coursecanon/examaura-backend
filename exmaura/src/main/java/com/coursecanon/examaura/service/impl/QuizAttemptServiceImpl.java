@@ -3,6 +3,7 @@ package com.coursecanon.examaura.service.impl;
 import com.coursecanon.examaura.dto.request.QuestionAnswerSubmitDTO;
 import com.coursecanon.examaura.dto.request.QuizAttemptStartRequestDTO;
 import com.coursecanon.examaura.dto.response.QuizAttemptResponseDTO;
+import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
 import com.coursecanon.examaura.entity.*;
 import com.coursecanon.examaura.entity.enums.AttemptMode;
 import com.coursecanon.examaura.exception.ResourceNotFoundException;
@@ -19,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -177,6 +180,23 @@ public class QuizAttemptServiceImpl implements QuizAttemptService {
         QuizAttempt attempt = attemptRepository.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attempt not found"));
         return attemptMapper.toResponse(attempt);
+    }
+
+    //get last 5 attempts
+    @Override
+    public List<UserAttemptResponseDto> getRecentAttemptsByUser(UUID userId) {
+        List<QuizAttempt> attempts = attemptRepository.findTop5ByUserIdOrderByCompletedAtDesc(userId);
+
+        return attempts.stream().map(attempt -> {
+            UserAttemptResponseDto dto = new UserAttemptResponseDto();
+            dto.setAttemptId(attempt.getId());
+            dto.setQuizId(attempt.getQuiz().getId());
+            dto.setQuizName(attempt.getQuiz().getTitle());
+            dto.setCategory(attempt.getQuiz().getCategory().getName());
+            dto.setPassedScore(attempt.getPassedScore());
+            dto.setCompletedAt(attempt.getCompletedAt());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
 //    Why this architecture is robust

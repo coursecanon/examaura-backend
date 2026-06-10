@@ -29,4 +29,7 @@ public interface QuizRepository extends JpaRepository<Quiz, UUID>, org.springfra
 
     // Track historical metrics or list creator-owned content
     List<Quiz> findByCreatorId(UUID creatorId);
+
+    // 🚀 NEW: Fetch top 10 latest quizzes created by specific user
+    List<Quiz> findTop10ByCreatorIdOrderByCreatedAtDesc(UUID creatorId);
 }
