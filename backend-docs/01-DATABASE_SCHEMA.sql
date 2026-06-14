@@ -45,6 +45,7 @@ CREATE TABLE users (
 	user_role user_role_enum NOT NULL DEFAULT 'VIEWER',
     oauth_id VARCHAR(255),
     password_hash VARCHAR(255), -- Only for LOCAL auth
+	token_version INTEGER DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
     email_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -58,6 +59,24 @@ CREATE TABLE users (
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_oauth_provider ON users(oauth_provider);
 CREATE INDEX idx_users_created_at ON users(created_at);
+
+-- ============================================
+-- REFRESH_TOKEN TABLE
+-- ============================================
+CREATE TABLE refresh_token (
+    id UUID PRIMARY KEY,
+    token VARCHAR(512) NOT NULL UNIQUE,
+    expiry_date TIMESTAMP NOT NULL,
+    revoked BOOLEAN NOT NULL DEFAULT FALSE,
+    user_id UUID NOT NULL,
+
+    CONSTRAINT fk_refresh_tokens_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+);
+-- Indexes for refresh token
+CREATE UNIQUE INDEX idx_refresh_token_token
+ON refresh_token(token);
 
 -- ============================================
 -- CATEGORIES TABLE

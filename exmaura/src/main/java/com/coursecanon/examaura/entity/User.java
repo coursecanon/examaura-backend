@@ -70,7 +70,9 @@ public class User implements UserDetails {
     private String passwordHash;
 
     @Column(nullable = false)
+    @Builder.Default
     private Integer tokenVersion=1;
+
 
     @Column(name = "is_active")
     @Builder.Default
@@ -115,8 +117,13 @@ public class User implements UserDetails {
         attempt.setUser(this);
     }
 
+    // Inside User.java
     public void incrementTokenVersion() {
-        this.tokenVersion++;
+        if (this.tokenVersion == null) {
+            this.tokenVersion = 1;
+        } else {
+            this.tokenVersion++;
+        }
     }
 
     // ========================================================================

@@ -113,6 +113,7 @@ public class QuizMapper {
         UserQuizResponseDto response = new UserQuizResponseDto();
         response.setId(quiz.getId());
         response.setTitle(quiz.getTitle());
+        response.setDurationMinutes(quiz.getDurationMinutes());
 
         if (quiz.getDifficulty() != null) {
             response.setDifficulty(quiz.getDifficulty().name());

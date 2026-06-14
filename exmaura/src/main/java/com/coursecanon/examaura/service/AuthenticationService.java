@@ -3,8 +3,10 @@ package com.coursecanon.examaura.service;
 import com.coursecanon.examaura.dto.request.LoginRequestDTO;
 import com.coursecanon.examaura.dto.request.RegisterRequestDto;
 import com.coursecanon.examaura.dto.response.AuthenticationResponseDTO;
+import com.coursecanon.examaura.entity.RefreshToken;
 import com.coursecanon.examaura.entity.User;
 import com.coursecanon.examaura.entity.enums.OAuthProvider;
+import com.coursecanon.examaura.entity.enums.UserRole;
 import com.coursecanon.examaura.repository.UserRepository;
 import com.coursecanon.examaura.security.JwtService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenService refreshTokenService;
 
     /**
      * Registers a new user, hashes their password, and issues a JWT.
@@ -43,7 +46,7 @@ public class AuthenticationService {
                 .email(request.getEmail())
                 .username(request.getUsername())
                 .passwordHash(passwordEncoder.encode(request.getPassword())) // Securely hash the password
-                .userRole(request.getUserRole())
+                .userRole(UserRole.VIEWER)
                 .oauthProvider(OAuthProvider.LOCAL)
                 .avatarUrl(request.getAvatarUrl())
                 .oauthId(null)
@@ -54,9 +57,11 @@ public class AuthenticationService {
                 buildClaims(savedUser),
                 savedUser
         );
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getEmail());
 
         return AuthenticationResponseDTO.builder()
                 .token(jwtToken)
+                .refreshToken(refreshToken.getToken())
                 .userId(savedUser.getId())
                 .fullName(savedUser.getFullName())
                 .username(savedUser.getUsername())
@@ -79,6 +84,8 @@ public class AuthenticationService {
         if (user.getOauthProvider() != OAuthProvider.LOCAL){
             throw new IllegalArgumentException("This account uses " + user.getOauthProvider() + " login. Please sign in using " + user.getOauthProvider());
         }
+
+        // 1. Authenticate credentials
         // This line automatically invokes your custom UserDetailsService and PasswordEncoder checks
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -87,13 +94,18 @@ public class AuthenticationService {
                 )
         );
 
+        // 2. Generate Access Token (Short-lived JWT)
         String jwtToken = jwtService.generateToken(
                 buildClaims(user),
                 user
         );
 
+        // 🚀 3. GENERATE REFRESH TOKEN (Long-lived, stored in DB)
+        RefreshToken refreshTokenEntity = refreshTokenService.createRefreshToken(user.getEmail());
+
         return AuthenticationResponseDTO.builder()
                 .token(jwtToken)
+                .refreshToken(refreshTokenEntity.getToken())
                 .userId(user.getId())
                 .email(user.getEmail())
                 .username(user.getUsername())

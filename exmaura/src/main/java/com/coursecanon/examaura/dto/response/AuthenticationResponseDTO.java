@@ -16,6 +16,7 @@ public class AuthenticationResponseDTO {
     private String role;
     private String avatar_url;
     private String fullName;
+    private String refreshToken;
 
 
     private OAuthProvider oauthProvider;

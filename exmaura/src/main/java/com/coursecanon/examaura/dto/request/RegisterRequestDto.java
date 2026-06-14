@@ -25,9 +25,6 @@ public class RegisterRequestDto {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotNull(message = "Role is required")
-    private UserRole userRole;
-
     private String avatarUrl;
 
 

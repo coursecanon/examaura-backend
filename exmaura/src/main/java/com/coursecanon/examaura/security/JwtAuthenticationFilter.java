@@ -76,7 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null, // No credentials needed here, token is proof
-                        userDetails.getAuthorities() // Roles (e.g., ROLE_ADMIN)
+                        userDetails.getAuthorities() // Roles (e.g., ADMIN)
                 );
 
                 // Add details about the web request (like IP address, session ID)

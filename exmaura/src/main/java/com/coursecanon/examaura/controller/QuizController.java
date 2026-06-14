@@ -6,6 +6,7 @@ import com.coursecanon.examaura.dto.response.UserAttemptResponseDto;
 import com.coursecanon.examaura.dto.response.UserQuizResponseDto;
 import com.coursecanon.examaura.dto.supportingdto.PaginatedResponse;
 import com.coursecanon.examaura.entity.Quiz;
+import com.coursecanon.examaura.entity.User;
 import com.coursecanon.examaura.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,8 +63,11 @@ public class QuizController {
     //Create quiz
     @PostMapping
     public ResponseEntity<QuizResponseDto> createQuiz(
-            @Valid @RequestBody QuizCreateRequestDTO request) {
-        UUID currentUserId = UUID.fromString("d831abd9-3eb7-4e9b-8a7f-908a09633876");
+            @Valid @RequestBody QuizCreateRequestDTO request,
+            @AuthenticationPrincipal User currentUser
+            ) {
+        // Extract the ID dynamically from the injected user object
+        UUID currentUserId = currentUser.getId();
         QuizResponseDto quiz = quizService.createQuiz(request, currentUserId);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(quiz);
