@@ -36,7 +36,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String email = extractEmail(attributes, registrationId);
         String name = extractName(attributes, registrationId);
         String oauthId = extractId(attributes, registrationId);
-
+        String avatarUrl=extractAvatarUrl(attributes, registrationId);
         if (email == null) {
             throw new OAuth2AuthenticationException("Email not found from OAuth2 provider");
         }
@@ -54,6 +54,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
             // Update existing user's details just in case they changed their name on Google/GitHub
             user.setFullName(name);
+            user.setAvatarUrl(avatarUrl);
             user = userRepository.save(user);
         } else {
 
@@ -64,6 +65,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .fullName(name)
                     .email(email)
                     .username(username)
+                    .avatarUrl(avatarUrl)
                     .oauthProvider(authProvider)
                     .oauthId(oauthId)
                     .userRole(UserRole.VIEWER) // Default role for new signups
@@ -81,6 +83,12 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private String extractEmail(Map<String, Object> attributes, String registrationId) {
         if ("google".equalsIgnoreCase(registrationId)) return (String) attributes.get("email");
         if ("github".equalsIgnoreCase(registrationId)) return (String) attributes.get("email"); // Ensure GitHub scope includes user:email
+        return null;
+    }
+
+    private String extractAvatarUrl(Map<String, Object> attributes, String registrationId) {
+        if ("google".equalsIgnoreCase(registrationId)) return (String) attributes.get("picture");
+        if ("github".equalsIgnoreCase(registrationId)) return (String) attributes.get("avatar_url"); // Ensure GitHub scope includes user:email
         return null;
     }
 

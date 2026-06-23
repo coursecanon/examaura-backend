@@ -1,6 +1,7 @@
 package com.coursecanon.examaura.dto.response;
 
 import com.coursecanon.examaura.entity.enums.OAuthProvider;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ public class AuthenticationResponseDTO {
     private String email;
     private String username;
     private String role;
+    @JsonProperty("avatarUrl")
     private String avatar_url;
     private String fullName;
     private String refreshToken;

@@ -1,6 +1,8 @@
 package com.coursecanon.examaura.security;
 
 import com.coursecanon.examaura.entity.User;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,7 +48,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwt = authHeader.substring(7);
 
         // 4. Extract the user email from the token
-        userEmail = jwtService.extractUsername(jwt);
+        // 🚀 THE FIX: Wrap token parsing in a try-catch block
+        try {
+            userEmail = jwtService.extractUsername(jwt);
+        } catch (ExpiredJwtException e) {
+            // Token is expired! Manually send a 401 and halt the request.
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Token has expired\"}");
+            return; // 🛑 Crucial: return here so it doesn't continue the filter chain
+        } catch (JwtException | IllegalArgumentException e) {
+            // Token is malformed, signature is invalid, or empty.
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Invalid JWT token\"}");
+            return; // 🛑 Halt request
+        }
 
 
 
@@ -92,8 +109,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 9. Continue the filter chain
         filterChain.doFilter(request, response);
-        System.out.println(
-                request.getMethod() + " " + request.getRequestURI()
-        );
+    }
+
+    // Add this to your JwtAuthenticationFilter class
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        // 🚀 CRITICAL: Match this to your exact refresh endpoint path
+        return path.startsWith("/api/v1/auth/refresh") ||
+                path.startsWith("/api/v1/auth/login") ||
+                path.startsWith("/api/v1/auth/register");
     }
 }

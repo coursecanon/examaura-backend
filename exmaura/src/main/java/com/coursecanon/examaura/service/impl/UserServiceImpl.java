@@ -64,7 +64,6 @@ public class UserServiceImpl implements UserService {
         // 1. Fetch the user safely from the database using the email extracted from the JWT
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        System.out.println("Hash currently in Login Service: " + user.getPassword());
 
         // 2. Security Check: Does the provided current password match the database hash?
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -82,7 +81,6 @@ public class UserServiceImpl implements UserService {
         User verifiedUser = userRepository.findById(user.getId()).get();
         user.incrementTokenVersion();
         userRepository.save(user);
-        System.out.println("User profile updated successfully for ID: " + user.getId());
     }
 
     @Override

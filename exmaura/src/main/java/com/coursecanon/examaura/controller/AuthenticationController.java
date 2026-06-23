@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -39,22 +42,10 @@ public class AuthenticationController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<JwtAuthenticationResponseDTO> refreshtoken(@RequestBody TokenRefreshRequestDTO request) {
-        String requestRefreshToken = request.getRefreshToken();
+    public ResponseEntity<JwtAuthenticationResponseDTO> refreshToken(@RequestBody TokenRefreshRequestDTO request) {
 
-        return refreshTokenService.findByToken(requestRefreshToken)
-                .map(refreshTokenService::verifyExpiration)
-                .map(RefreshToken::getUserInfo)
-                .map(user -> {
-                    // Generate a new, short-lived Access Token
-                    String newAccessToken = jwtService.generateToken(user);
+        JwtAuthenticationResponseDTO response = authService.refreshToken(request);
 
-                    return ResponseEntity.ok(new JwtAuthenticationResponseDTO(
-                            newAccessToken,
-                            requestRefreshToken, // Send back the same refresh token
-                            "Bearer"
-                    ));
-                })
-                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+        return ResponseEntity.ok(response);
     }
 }

@@ -2,7 +2,9 @@ package com.coursecanon.examaura.service;
 
 import com.coursecanon.examaura.dto.request.LoginRequestDTO;
 import com.coursecanon.examaura.dto.request.RegisterRequestDto;
+import com.coursecanon.examaura.dto.request.TokenRefreshRequestDTO;
 import com.coursecanon.examaura.dto.response.AuthenticationResponseDTO;
+import com.coursecanon.examaura.dto.response.JwtAuthenticationResponseDTO;
 import com.coursecanon.examaura.entity.RefreshToken;
 import com.coursecanon.examaura.entity.User;
 import com.coursecanon.examaura.entity.enums.OAuthProvider;
@@ -123,5 +125,35 @@ public class AuthenticationService {
         claims.put("tokenVersion", user.getTokenVersion());
 
         return claims;
+    }
+
+    @Transactional(readOnly = true)
+    public JwtAuthenticationResponseDTO refreshToken(TokenRefreshRequestDTO request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUserInfo)
+                .map(user -> {
+
+                    // Build the exact same claims map you use during login
+                    Map<String, Object> extraClaims = new HashMap<>();
+                    extraClaims.put("userId", user.getId());
+                    extraClaims.put("tokenVersion", user.getTokenVersion());
+
+                    if (user.getUserRole() != null) {
+                        extraClaims.put("role", user.getUserRole().name());
+                    }
+
+                    // Generate a new Access Token
+                    String newAccessToken = jwtService.generateToken(extraClaims, user);
+
+                    return new JwtAuthenticationResponseDTO(
+                            newAccessToken,
+                            requestRefreshToken,
+                            "Bearer"
+                    );
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
 }

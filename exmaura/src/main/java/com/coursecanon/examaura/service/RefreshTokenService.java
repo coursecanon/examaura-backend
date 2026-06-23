@@ -4,6 +4,7 @@ import com.coursecanon.examaura.entity.RefreshToken;
 import com.coursecanon.examaura.repository.RefreshTokenRepository;
 import com.coursecanon.examaura.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -18,7 +19,8 @@ public class RefreshTokenService {
     private final UserRepository userRepository;
 
     // Set refresh token expiration (e.g., 7 days)
-    private final long REFRESH_TOKEN_EXPIRATION_MS = 604800000L;
+    @Value("${jwt.refresh-token-expiration}")
+    private long REFRESH_TOKEN_EXPIRATION_MS;
 
     public RefreshToken createRefreshToken(String email) {
         RefreshToken refreshToken = RefreshToken.builder()

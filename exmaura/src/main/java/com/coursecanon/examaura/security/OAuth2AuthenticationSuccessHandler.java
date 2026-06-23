@@ -1,12 +1,16 @@
 package com.coursecanon.examaura.security;
 
+import com.coursecanon.examaura.entity.RefreshToken;
+import com.coursecanon.examaura.entity.User;
+import com.coursecanon.examaura.repository.UserRepository;
+import com.coursecanon.examaura.service.RefreshTokenService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -23,6 +27,8 @@ import java.util.Map;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+    private final UserRepository userRepository;
 
     // We default to localhost:5173 for React, but allow overriding via application.yml for production
     @Value("${app.frontend.redirect-uri}")
@@ -43,18 +49,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String name = oAuth2User.getAttribute("name");
         String picture = oAuth2User.getAttribute("picture"); // 👈 Google's profile picture URL
 
+        User dbUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("OAuth2 user not found in database"));
+
+
+
         // 2. Pack them into an extra claims map
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("name", name);
         extraClaims.put("avatarUrl", picture); // Passing it directly to the token without saving to DB
-
-        // 3. Generate the token containing these extra claims
-        // Assumes your jwtService has a method like: generateToken(Map<String, Object> extraClaims, UserDetails userDetails)
-        String token = jwtService.generateToken(extraClaims, (UserDetails) authentication.getPrincipal());
+        extraClaims.put("userId", dbUser.getId());
+        extraClaims.put("tokenVersion", dbUser.getTokenVersion());
+        if (dbUser.getUserRole() != null) {
+            extraClaims.put("role", dbUser.getUserRole().name());
+        }
+        String token = jwtService.generateToken(extraClaims, dbUser);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(email);
 
         // 3. Construct the redirect URL (e.g., http://localhost:3000/oauth2/redirect?token=eyJhbGci...)
         String targetUrl = UriComponentsBuilder.fromUriString(frontendRedirectUri)
                 .queryParam("token", token)
+                .queryParam("refreshToken", refreshToken.getToken())
                 .build().toUriString();
 
         // 4. Clear any old authentication attributes and execute the redirect
